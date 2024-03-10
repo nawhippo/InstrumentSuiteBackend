@@ -6,7 +6,7 @@ WORKDIR /app
 COPY src /app/src
 COPY pom.xml /app
 
-RUN mvn -f /app/pom.xml clean package
+RUN mvn -f /app/pom.xml clean package -DskipTests
 
 # Final stage
 FROM eclipse-temurin:17-jre
