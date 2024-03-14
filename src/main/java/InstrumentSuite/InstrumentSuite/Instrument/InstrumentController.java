@@ -3,6 +3,7 @@ package InstrumentSuite.InstrumentSuite.Instrument;
 import InstrumentSuite.InstrumentSuite.Chord.Chord;
 import InstrumentSuite.InstrumentSuite.Note.Note;
 import InstrumentSuite.InstrumentSuite.TuningConfiguration.TuningConfiguration;
+import InstrumentSuite.InstrumentSuite.TuningConfiguration.TuningConfigurationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,10 +16,13 @@ import java.util.Optional;
 public class InstrumentController {
 
     private final InstrumentService instrumentService;
+    private final TuningConfigurationRepository tuningConfigurationRepository;
 
     @Autowired
-    public InstrumentController(InstrumentService instrumentService) {
+    public InstrumentController(InstrumentService instrumentService, TuningConfigurationRepository tuningConfigurationRepository) {
+
         this.instrumentService = instrumentService;
+        this.tuningConfigurationRepository = tuningConfigurationRepository;
     }
 
     // Endpoint to generate fretboard
@@ -27,6 +31,8 @@ public class InstrumentController {
         Instrument instrument = request.getInstrument();
         TuningConfiguration tuning = request.getTuning();
         Note[][] fretboard = instrumentService.generateFretboard(instrument, tuning);
+        tuning.setFretboard(fretboard);
+        tuningConfigurationRepository.save(tuning);
         return ResponseEntity.ok(fretboard);
     }
 

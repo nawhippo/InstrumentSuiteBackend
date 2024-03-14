@@ -33,4 +33,6 @@ public class TuningConfiguration {
 
     @Column
     private String name;
+
+    Note[][] fretboard;
 }

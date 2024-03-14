@@ -43,7 +43,6 @@ public class TuningServiceTests {
 
     @Test
     public void testPitchDetection() throws UnsupportedAudioFileException, IOException {
-        // This is conceptual; actual implementation depends on your setup
         final float hz = 1.0f;
         AudioInputStream audioInputStream = getAudioInputStreamForFrequency(440);
         InstrumentTuningService service = new InstrumentTuningService();

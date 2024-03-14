@@ -12,7 +12,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-
 public class CustomTokenAuthenticationFilter extends OncePerRequestFilter {
 
     private JwtUtil jwtUtil;
@@ -30,14 +29,21 @@ public class CustomTokenAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String username = null;
         String jwt = null;
-        //bypass jwt process
-        if (path.equals("/api/account/login") || path.equals("/api/account/logout") || path.equals("/api/account/createAccount")) {
+
+        //bypass JWT process for specific paths or all GET requests
+        if (request.getMethod().equals("GET") || path.equals("/api/account/login") || path.equals("/api/account/logout") || path.equals("/api/account/createAccount")) {
             filterChain.doFilter(request, response);
             return;
         }
+
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
-            username = jwtUtil.extractUsername(jwt);
+            try {
+                username = jwtUtil.extractUsername(jwt);
+            } catch (io.jsonwebtoken.MalformedJwtException e) {
+                unauthorizedResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT Token");
+                return;
+            }
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -54,15 +60,9 @@ public class CustomTokenAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-
     private void unauthorizedResponse(ServletResponse response, int statusCode, String message) throws IOException {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         httpResponse.setStatus(statusCode);
         httpResponse.getWriter().write(message);
-    }
-
-    @Override
-    public void destroy() {
-
     }
 }

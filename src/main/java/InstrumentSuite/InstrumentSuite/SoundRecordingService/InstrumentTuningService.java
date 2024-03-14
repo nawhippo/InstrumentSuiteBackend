@@ -31,10 +31,11 @@ public class InstrumentTuningService {
         this.tuningConfigurationRepository = tuningConfigurationRepository;
         this.noteRepository = noteRepository;
     }
-    
+
     public PitchResponse estimateNote(float pitch) {
-        logger.info("Estimating note for pitch {}", pitch);
+        logger.info("Estimating note for pitch: {}", pitch);
         if (pitch <= 0) {
+            logger.warn("Pitch is less than or equal to 0. Returning N/A.");
             return new PitchResponse(new Note("N/A", 0), 0f);
         }
 
@@ -45,13 +46,13 @@ public class InstrumentTuningService {
         String noteName = noteName(noteIndex);
 
         int calculatedMidiNote = MidiNoteConverter.noteNameToMidi(noteName + ((midiNote / 12) - 1));
-        if(calculatedMidiNote != midiNote) {
-            logger.error("Mismatch in calculated MIDI note numbers.");
+        if (calculatedMidiNote != midiNote) {
+            logger.error("Mismatch in calculated MIDI note numbers for note: {} with MIDI: {}", noteName, midiNote);
         }
 
+        logger.info("Estimated note: {}, MIDI: {}, Difference in cents: {}", noteName, midiNote, differenceInCents);
         return new PitchResponse(new Note(noteName, midiNote), differenceInCents);
     }
-
     private double log2(double a) {
         return Math.log(a) / Math.log(2.0);
     }
@@ -75,10 +76,10 @@ public class InstrumentTuningService {
     }
 
     public float pitchReturner(AudioInputStream audioInputStream) {
-        System.out.println("Starting pitch returner");
+        logger.info("Starting pitch returner");
         try {
             AudioFormat format = audioInputStream.getFormat();
-            System.out.println("Format of audio input stream" + format.toString());
+            logger.info("Format of audio input stream: {}", format.toString());
             int bufferSize = 4096;
             int overlap = 2048;
 
@@ -92,36 +93,37 @@ public class InstrumentTuningService {
                     (PitchDetectionResult result, AudioEvent audioEvent) -> {
                         if (result.getPitch() != -1) {
                             pitch[0] = result.getPitch();
+                            logger.info("Detected pitch: {}", pitch[0]);
                             dispatcher.stop();
                         }
                     }
             ));
-            System.out.println("Starting thread");
-            new Thread(dispatcher).start();
+
+            new Thread(dispatcher, "Audio Dispatcher").start();
             dispatcher.run();
-            System.out.println("Returning pitch");
+            logger.info("Returning pitch: {}", pitch[0]);
             return pitch[0];
         } catch (Exception e) {
-            System.out.println("Error occurred: " + e.toString());
+            logger.error("Error occurred in pitchReturner: ", e);
             return 0f;
         }
     }
-
     public PitchResponse getNoteFromAudioStream(AudioInputStream audioInputStream) throws UnsupportedAudioFileException, IOException {
-        System.out.println("Getting note from the audio stream");
+        logger.info("Getting note from the audio stream");
         float pitch = pitchReturner(audioInputStream);
+        logger.info("Detected pitch from audio stream: {}", pitch);
         return estimateNote(pitch);
     }
 
-
     public PitchResponse getDifferenceGivenNote(AudioInputStream audioInputStream, String expectedNoteName) {
+        logger.info("Getting difference for given note: {}", expectedNoteName);
         float detectedPitch = pitchReturner(audioInputStream);
         Note note = noteRepository.findByName(expectedNoteName)
                 .orElseThrow(() -> new EntityNotFoundException("Note not found with name: " + expectedNoteName));
-        //no need to store this in the note for the sake of run time
         float expectedFrequency = (float) (440 * Math.pow(2, (note.getMidiNote() - 69) / 12.0));
         float differenceInHz = detectedPitch - expectedFrequency;
 
+        logger.info("Detected pitch: {}, Expected frequency: {}, Difference in Hz: {}", detectedPitch, expectedFrequency, differenceInHz);
         return new PitchResponse(note, differenceInHz);
     }
 }
