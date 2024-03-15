@@ -31,7 +31,7 @@ public class CustomTokenAuthenticationFilter extends OncePerRequestFilter {
         String username = null;
         String jwt = null;
         //bypass jwt process
-        if (path.equals("/api/account/login") || path.equals("/api/account/logout") || path.equals("/api/account/createAccount")) {
+        if (path.equals("/api/account/login") || path.equals("/api/account/logout") || path.equals("/api/account/createAccount") || path.equals("/api/instruments/fretboard") || request.getMethod().equals("GET")) {
             filterChain.doFilter(request, response);
             return;
         }

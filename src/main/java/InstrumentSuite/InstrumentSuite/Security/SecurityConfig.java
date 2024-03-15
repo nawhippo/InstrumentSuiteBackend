@@ -57,7 +57,7 @@ public class SecurityConfig {
                 .authorizeRequests(authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers(HttpMethod.GET, "/**").permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/account/createAccount", "/api/account/login").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/account/createAccount", "/api/account/login", "/api/instruments/fretboard").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/**").authenticated()
                                 .requestMatchers(HttpMethod.PUT, "/**").authenticated()
                                 .requestMatchers(HttpMethod.DELETE, "/**").authenticated()
